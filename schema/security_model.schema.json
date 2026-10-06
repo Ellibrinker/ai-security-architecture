@@ -1,0 +1,276 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Ellibrinker/ai-security-architecture/schema/security_model.schema.json",
+  "title": "Security Architecture Model",
+  "description": "Structured, machine-readable output of a black-box application security architecture reconstruction engagement, per docs/METHODOLOGY.md.",
+  "type": "object",
+  "required": ["schema_version", "app", "analysis_coverage", "actors", "tenants", "resources", "relationships", "authorization_rules", "state_machines", "security_invariants", "security_hypotheses", "coverage_review", "validation_results", "unresolved_questions"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver. Bump only when this schema's required shape changes."
+    },
+    "app": {
+      "type": "object",
+      "required": ["target_url", "app_name", "analysis_date", "engagement_scope", "notes"],
+      "properties": {
+        "target_url": { "type": "string" },
+        "app_name": { "type": "string" },
+        "analysis_date": { "type": "string", "format": "date" },
+        "engagement_scope": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "analysis_coverage": {
+      "type": "object",
+      "description": "Per-section coverage status, distinguishing 'not yet analyzed' from 'analyzed, found nothing' (an empty array alone cannot make that distinction).",
+      "properties": {
+        "actors": { "$ref": "#/definitions/coverageStatus" },
+        "tenants": { "$ref": "#/definitions/coverageStatus" },
+        "resources": { "$ref": "#/definitions/coverageStatus" },
+        "relationships": { "$ref": "#/definitions/coverageStatus" },
+        "authorization_rules": { "$ref": "#/definitions/coverageStatus" },
+        "state_machines": { "$ref": "#/definitions/coverageStatus" },
+        "security_invariants": { "$ref": "#/definitions/coverageStatus" },
+        "validation_results": { "$ref": "#/definitions/coverageStatus" }
+      }
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "roles", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "roles": { "type": "array", "items": { "type": "string" } },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "tenants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "tenant_scoped", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "tenant_scoped": { "type": "boolean" },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "from", "to", "description", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["ownership", "membership", "parent_child", "tenant_boundary", "other"] },
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "authorization_rules": {
+      "type": "array",
+      "description": "Atomic Actor x Resource x Action x Condition rules. One action per rule - never combine actions (e.g. 'edit/delete') in a single entry.",
+      "items": {
+        "type": "object",
+        "required": ["id", "actor", "resource", "action", "conditions", "effect", "execution_path_status", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "actor": { "type": "string", "description": "A single, specific actor id. Do not combine actors (e.g. no 'member_or_admin')." },
+          "resource": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["Create", "Read", "Update", "Delete", "List", "Invite", "Share", "Approve", "Administer", "Other"]
+          },
+          "conditions": { "type": "array", "items": { "type": "string" } },
+          "effect": {
+            "type": "string",
+            "enum": ["allow", "deny", "unknown"],
+            "description": "Use 'unknown' whenever status is UNRESOLVED and the real allow/deny outcome has not actually been established. Never default an untested rule to 'deny'."
+          },
+          "execution_path_status": {
+            "type": "string",
+            "enum": ["DECLARED_ONLY", "OBSERVED_IN_USE", "not_applicable"]
+          },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "state_machines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "resource", "states", "transitions", "unresolved_transitions"],
+        "properties": {
+          "id": { "type": "string" },
+          "resource": { "type": "string" },
+          "states": { "type": "array", "items": { "type": "string" } },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["from", "to", "allowed_actors", "conditions", "status", "confidence", "evidence", "evidence_source"],
+              "properties": {
+                "from": { "type": "string" },
+                "to": { "type": "string" },
+                "allowed_actors": { "type": "array", "items": { "type": "string" } },
+                "conditions": { "type": "array", "items": { "type": "string" } },
+                "status": { "$ref": "#/definitions/status" },
+                "confidence": { "$ref": "#/definitions/confidence" },
+                "evidence": { "type": "string" },
+                "evidence_source": { "type": "string" }
+              }
+            }
+          },
+          "unresolved_transitions": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "security_invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "affected_actors", "affected_resources", "affected_actions", "status", "confidence", "evidence", "evidence_source"],
+        "properties": {
+          "id": { "type": "string" },
+          "statement": { "type": "string" },
+          "affected_actors": { "type": "array", "items": { "type": "string" }, "description": "Scope strictly to actors for whom evidence actually exists." },
+          "affected_resources": { "type": "array", "items": { "type": "string" } },
+          "affected_actions": { "type": "array", "items": { "type": "string" } },
+          "status": { "$ref": "#/definitions/status" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "evidence": { "type": "string" },
+          "evidence_source": { "type": "string" }
+        }
+      }
+    },
+    "security_hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "challenges_rule_id_or_invariant_id", "actor", "resource", "action", "condition", "suspected_execution_path", "execution_path_status", "evidence", "missing_or_uncertain_control", "confidence", "minimal_validation_method"],
+        "properties": {
+          "id": { "type": "string" },
+          "challenges_rule_id_or_invariant_id": { "type": "string" },
+          "actor": { "type": "string" },
+          "resource": { "type": "string" },
+          "action": { "type": "string" },
+          "condition": { "type": "string" },
+          "suspected_execution_path": { "type": "string" },
+          "execution_path_status": { "type": "string", "enum": ["DECLARED_ONLY", "OBSERVED_IN_USE"] },
+          "evidence": { "type": "string" },
+          "missing_or_uncertain_control": { "type": "string" },
+          "confidence": { "$ref": "#/definitions/confidence" },
+          "minimal_validation_method": { "type": "string" }
+        }
+      }
+    },
+    "coverage_review": {
+      "type": "object",
+      "required": ["dimensions_reviewed", "coverage_gaps"],
+      "properties": {
+        "dimensions_reviewed": { "type": "array", "items": { "type": "string" } },
+        "coverage_gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "dimension"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "dimension": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "validation_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "hypothesis_id", "rule_ids_tested", "actor", "resource", "action", "condition_tested", "test_performed", "evidence", "result_status", "unresolved_edges", "notes"],
+        "properties": {
+          "id": { "type": "string" },
+          "hypothesis_id": { "type": "string" },
+          "rule_ids_tested": { "type": "array", "items": { "type": "string" } },
+          "actor": { "type": "string" },
+          "resource": { "type": "string" },
+          "action": { "type": "string" },
+          "condition_tested": { "type": "string" },
+          "test_performed": { "type": "string" },
+          "evidence": { "type": "string" },
+          "result_status": { "type": "string", "enum": ["CONFIRMED", "PARTIALLY_CONFIRMED", "REJECTED", "UNRESOLVED"] },
+          "unresolved_edges": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "related_to", "why_unresolved"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "related_to": { "type": "array", "items": { "type": "string" } },
+          "why_unresolved": { "type": "string" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "status": {
+      "type": "string",
+      "enum": ["OBSERVED", "INFERRED", "CONFIRMED", "PARTIALLY_CONFIRMED", "REJECTED", "UNRESOLVED"]
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "coverageStatus": {
+      "type": "string",
+      "enum": ["NOT_ANALYZED", "PARTIAL", "COMPLETE"]
+    }
+  }
+}

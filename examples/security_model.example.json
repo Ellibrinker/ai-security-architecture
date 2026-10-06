@@ -1,0 +1,649 @@
+{
+  "schema_version": "1.1.0",
+  "app": {
+    "target_url": "https://example-teamdocs-app.test/",
+    "app_name": "ExampleTeamDocs",
+    "analysis_date": "2026-01-01",
+    "engagement_scope": "Owner-authorized black-box exploration plus non-destructive active validation using two owner-supplied test accounts: member@example.com (Member, Organization A) and admin@example.com (Admin, Organization B). No Admin credentials for Organization A were provided/used. No destructive actions performed. No ID-enumeration attempted against any tenant other than Organization A and Organization B.",
+    "notes": "Anonymized example model derived from a real two-tenant document-collaboration SaaS engagement. Organization/user names, emails, and the target URL have been replaced with generic placeholders; all structural findings, statuses, and evidence descriptions are preserved as originally recorded."
+  },
+  "analysis_coverage": {
+    "actors": "PARTIAL",
+    "tenants": "PARTIAL",
+    "resources": "PARTIAL",
+    "relationships": "PARTIAL",
+    "authorization_rules": "PARTIAL",
+    "state_machines": "NOT_ANALYZED",
+    "security_invariants": "PARTIAL",
+    "validation_results": "PARTIAL"
+  },
+  "actors": [
+    {
+      "id": "actor_anonymous",
+      "name": "Anonymous visitor",
+      "description": "Unauthenticated user hitting the app before login",
+      "roles": [
+        "anonymous"
+      ],
+      "status": "OBSERVED",
+      "confidence": 80,
+      "evidence": "Login/signup screen reachable without authentication",
+      "evidence_source": "Phase 1 exploration of https://example-teamdocs-app.test/"
+    },
+    {
+      "id": "actor_member",
+      "name": "Member",
+      "description": "Authenticated user with role Member, scoped to exactly one organization observed (Organization A)",
+      "roles": [
+        "member"
+      ],
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Account member@example.com logged in showing role badge 'Member' within organization 'Organization A'",
+      "evidence_source": "Sidebar UI, dashboard view, Round 1"
+    },
+    {
+      "id": "actor_admin",
+      "name": "Admin",
+      "description": "Authenticated user with role Admin, scoped to exactly one organization observed (Organization B); gains Team/Invitations management on top of Member-level capabilities",
+      "roles": [
+        "admin"
+      ],
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Account admin@example.com logged in showing role badge 'Admin' within organization 'Organization B', with additional 'Invitations' nav item and 'Invite Member' button not present for the Member account",
+      "evidence_source": "Sidebar UI, dashboard and Team page, Round 2"
+    }
+  ],
+  "tenants": [
+    {
+      "id": "tenant_org_a",
+      "name": "Organization A",
+      "description": "Organization tenant containing the Member test account and its documents",
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Dashboard and sidebar consistently labeled 'Organization A' for member@example.com",
+      "evidence_source": "Round 1 exploration"
+    },
+    {
+      "id": "tenant_org_b",
+      "name": "Organization B",
+      "description": "Organization tenant containing the Admin test account, 1 member, and 3 documents",
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Dashboard and sidebar consistently labeled 'Organization B' for admin@example.com; dashboard reported MEMBERS 1, DOCUMENTS 3",
+      "evidence_source": "Round 2 exploration"
+    }
+  ],
+  "resources": [
+    {
+      "id": "resource_document",
+      "name": "Document",
+      "description": "Core content object: title, body/content, created_by (owner), organization, created_date. Routes: /documents/<id> (view), /documents/<id>/edit (edit).",
+      "tenant_scoped": true,
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Documents list and individual document pages observed in both tenants",
+      "evidence_source": "Rounds 1 and 2"
+    },
+    {
+      "id": "resource_team_member",
+      "name": "Team member / roster entry",
+      "description": "A user's membership record within an organization (name, email, role), shown on the Team page",
+      "tenant_scoped": true,
+      "status": "OBSERVED",
+      "confidence": 85,
+      "evidence": "Team page listed only the current org's members in both tenants",
+      "evidence_source": "Rounds 1 and 2, /team pages"
+    },
+    {
+      "id": "resource_invitation",
+      "name": "Invitation",
+      "description": "Pending invite to join an organization with a specified role (Member or Admin), managed via /invitations and the Team page's 'Invite Member' modal",
+      "tenant_scoped": true,
+      "status": "OBSERVED",
+      "confidence": 75,
+      "evidence": "Invite Member modal with Email + Role (Member/Admin) fields and 'Send invitation' button was reachable for the Admin account; no invitation was actually sent",
+      "evidence_source": "Round 2, /team page Invite Member modal"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_document_ownership",
+      "type": "ownership",
+      "from": "actor",
+      "to": "resource_document",
+      "description": "Document.created_by -> User; each document has exactly one owning author",
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Document view pages show a 'Created by' field naming a specific user",
+      "evidence_source": "Rounds 1 and 2, document view pages"
+    },
+    {
+      "id": "rel_user_org_membership",
+      "type": "membership",
+      "from": "actor",
+      "to": "tenant_org_a_or_org_b",
+      "description": "User belongs to an organization; both test accounts showed membership in exactly one organization each via the org switcher, which displayed only that org plus 'Sign out' with no option to switch to another org",
+      "status": "OBSERVED",
+      "confidence": 70,
+      "evidence": "Org switcher dropdown for both accounts showed only the current org's identity and a Sign out action, no list of other orgs",
+      "evidence_source": "Rounds 1 and 2, org switcher dropdown"
+    },
+    {
+      "id": "rel_tenant_boundary_documents",
+      "type": "tenant_boundary",
+      "from": "resource_document",
+      "to": "tenant_org_a_or_org_b",
+      "description": "Documents are scoped to exactly one organization/tenant",
+      "status": "CONFIRMED",
+      "confidence": 90,
+      "evidence": "Organization B Admin could not read or write Organization A's document by direct ID",
+      "evidence_source": "Round 2 active validation, see validation_results VR1 and VR2"
+    },
+    {
+      "id": "rel_tenant_boundary_roster",
+      "type": "tenant_boundary",
+      "from": "resource_team_member",
+      "to": "tenant_org_a_or_org_b",
+      "description": "Team roster is scoped to exactly one organization/tenant",
+      "status": "OBSERVED",
+      "confidence": 55,
+      "evidence": "Organization B Admin's /team page showed only Organization B's own 1 member; this was not an active attempt to directly fetch Organization A's roster, so it is observational support rather than a confirmed isolation test.",
+      "evidence_source": "Round 2 active validation, see validation_results VR3"
+    }
+  ],
+  "authorization_rules": [
+    {
+      "id": "rule_member_read_document_same_org",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Read",
+      "conditions": [
+        "same organization as the document",
+        "any author, including documents not owned by the actor"
+      ],
+      "effect": "allow",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "OBSERVED",
+      "confidence": 85,
+      "evidence": "Member account (member_user) viewed Admin-authored document 'Org A Financial Report' in its own org without restriction",
+      "evidence_source": "Round 1 exploration, /documents/<org-a-doc-id> view"
+    },
+    {
+      "id": "rule_member_create_document_own_org",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Create",
+      "conditions": [
+        "within actor's own organization"
+      ],
+      "effect": "allow",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "OBSERVED",
+      "confidence": 80,
+      "evidence": "Member account successfully created 'test-doc-created-by-member' via the New Document flow",
+      "evidence_source": "Round 1, document creation test"
+    },
+    {
+      "id": "rule_member_update_document_own_authorship",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "actor is the document's author (same org, own document)"
+      ],
+      "effect": "allow",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "OBSERVED",
+      "confidence": 80,
+      "evidence": "Member account edited and saved its own document 'test-doc-created-by-member' successfully",
+      "evidence_source": "Round 1, own-document edit test"
+    },
+    {
+      "id": "rule_member_update_document_not_own_authorship",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "same organization",
+        "actor is NOT the document's author",
+        "accessed directly via /documents/<id>/edit, bypassing the UI which hides the edit affordance"
+      ],
+      "effect": "deny",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "CONFIRMED",
+      "confidence": 95,
+      "evidence": "Member account attempted to edit Admin-authored 'Org A Financial Report' directly by URL; server rejected the save with 'You can only edit your own documents'; re-fetch of the document afterward confirmed content was unchanged",
+      "evidence_source": "Round 1 active validation, direct edit attempt on /documents/<org-a-doc-id>/edit plus re-fetch of /documents/<org-a-doc-id>"
+    },
+    {
+      "id": "rule_member_delete_document",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Delete",
+      "conditions": [
+        "any condition"
+      ],
+      "effect": "unknown",
+      "execution_path_status": "not_applicable",
+      "status": "UNRESOLVED",
+      "confidence": 30,
+      "evidence": "No delete control (button, menu item, or route) was found anywhere in the UI for the Member role, on own or others' documents",
+      "evidence_source": "Round 1, exhaustive UI review of document view and edit pages"
+    },
+    {
+      "id": "rule_admin_delete_document",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Delete",
+      "conditions": [
+        "any condition"
+      ],
+      "effect": "unknown",
+      "execution_path_status": "not_applicable",
+      "status": "UNRESOLVED",
+      "confidence": 30,
+      "evidence": "No delete control (button, menu item, or route) was found anywhere in the UI for the Admin role either, including on the Admin's own documents",
+      "evidence_source": "Round 2, exhaustive UI review of document view and edit pages under Organization B"
+    },
+    {
+      "id": "rule_admin_read_document_cross_tenant",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Read",
+      "conditions": [
+        "document belongs to a different organization/tenant than the actor's own"
+      ],
+      "effect": "deny",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "CONFIRMED",
+      "confidence": 95,
+      "evidence": "Organization B Admin account requested Organization A's 'Org A Financial Report' by direct ID via /documents/<org-a-doc-id>; response was 'Document not found', identical to a genuinely nonexistent ID, with no data or existence leakage",
+      "evidence_source": "Round 2 active validation, VR1"
+    },
+    {
+      "id": "rule_admin_update_document_cross_tenant",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "document belongs to a different organization/tenant than the actor's own",
+        "accessed directly via /documents/<id>/edit"
+      ],
+      "effect": "deny",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "CONFIRMED",
+      "confidence": 85,
+      "evidence": "Organization B Admin loaded /documents/<org-a-doc-id>/edit; the editor rendered an empty 'Untitled document' form rather than the real Organization A content (no data exposure), and submitting 'Save changes' produced no persisted change: no phantom document appeared in Organization B's list, and re-fetching the Organization A document afterward showed its original content ('ORG-A-DOC-001') unchanged",
+      "evidence_source": "Round 2 active validation, VR2"
+    },
+    {
+      "id": "rule_admin_read_roster_cross_tenant",
+      "actor": "actor_admin",
+      "resource": "resource_team_member",
+      "action": "Read",
+      "conditions": [
+        "roster belongs to a different organization/tenant than the actor's own"
+      ],
+      "effect": "unknown",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "OBSERVED",
+      "confidence": 55,
+      "evidence": "Organization B Admin's own /team page listed only Organization B's 1 member. This was passive observation of the Organization B view, not an active attempt to directly request Organization A's roster by ID or endpoint, so it does not confirm a deny outcome for a genuine cross-tenant roster-read attempt.",
+      "evidence_source": "Round 2 active validation, VR3"
+    },
+    {
+      "id": "rule_member_administer_invitations",
+      "actor": "actor_member",
+      "resource": "resource_invitation",
+      "action": "Administer",
+      "conditions": [
+        "actor role is Member, not Admin",
+        "accessed directly via /invitations, bypassing the UI which hides the Invitations nav item for Members"
+      ],
+      "effect": "deny",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "CONFIRMED",
+      "confidence": 95,
+      "evidence": "Member account (member_user) navigated directly to /invitations; server-rendered block: 'Admins only - Only organization admins can manage invitations', not merely a hidden UI element",
+      "evidence_source": "Round 2 active validation, VR4"
+    },
+    {
+      "id": "rule_admin_invite_member",
+      "actor": "actor_admin",
+      "resource": "resource_invitation",
+      "action": "Invite",
+      "conditions": [
+        "within actor's own organization",
+        "role to assign is Member or Admin"
+      ],
+      "effect": "allow",
+      "execution_path_status": "DECLARED_ONLY",
+      "status": "OBSERVED",
+      "confidence": 50,
+      "evidence": "Admin account opened the 'Invite member' modal showing Email and Role (Member/Admin) fields and a 'Send invitation' button; the modal rendering and field presence were directly observed, but the invitation was never actually submitted, so the application was never seen exercising the underlying invite-creation path end-to-end.",
+      "evidence_source": "Round 2, /team page Invite Member modal (not submitted)"
+    },
+    {
+      "id": "rule_admin_update_document_same_org_other_author",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "same organization as the document",
+        "actor is NOT the document's author"
+      ],
+      "effect": "unknown",
+      "execution_path_status": "not_applicable",
+      "status": "UNRESOLVED",
+      "confidence": 20,
+      "evidence": "Organization B (the only tenant with an Admin test account) had just 1 member, so no same-organization document authored by a different user existed to test whether Admin can edit another member's document within the same tenant",
+      "evidence_source": "Round 2, Organization B dashboard reporting MEMBERS: 1"
+    }
+  ],
+  "state_machines": [],
+  "security_invariants": [
+    {
+      "id": "inv_read_any_doc_same_org",
+      "statement": "A Member can read any document within their own organization, regardless of who authored it.",
+      "affected_actors": [
+        "actor_member"
+      ],
+      "affected_resources": [
+        "resource_document"
+      ],
+      "affected_actions": [
+        "Read"
+      ],
+      "status": "OBSERVED",
+      "confidence": 85,
+      "evidence": "Member read Admin-authored document in the same org without restriction. No equivalent same-org read test was performed with an Admin actor.",
+      "evidence_source": "rule_member_read_document_same_org"
+    },
+    {
+      "id": "inv_update_only_own_document",
+      "statement": "A Member may only update a document they personally authored.",
+      "affected_actors": [
+        "actor_member"
+      ],
+      "affected_resources": [
+        "resource_document"
+      ],
+      "affected_actions": [
+        "Update"
+      ],
+      "status": "CONFIRMED",
+      "confidence": 90,
+      "evidence": "Member's attempt to update a non-owned document was rejected server-side with content verified unchanged",
+      "evidence_source": "rule_member_update_document_not_own_authorship"
+    },
+    {
+      "id": "inv_tenant_isolation_documents",
+      "statement": "Documents belonging to one organization cannot be read or updated by an actor from a different organization, and non-existence responses do not reveal whether an ID belongs to another tenant versus not existing at all.",
+      "affected_actors": [
+        "actor_admin",
+        "actor_member"
+      ],
+      "affected_resources": [
+        "resource_document"
+      ],
+      "affected_actions": [
+        "Read",
+        "Update"
+      ],
+      "status": "PARTIALLY_CONFIRMED",
+      "confidence": 85,
+      "evidence": "Confirmed for the Organization B Admin actor against an Organization A document; the symmetric case (Organization A Member or Admin reading/updating a Organization B document) was never tested",
+      "evidence_source": "rule_admin_read_document_cross_tenant, rule_admin_update_document_cross_tenant"
+    },
+    {
+      "id": "inv_tenant_isolation_roster",
+      "statement": "Team roster data belonging to one organization is not visible to actors from a different organization.",
+      "affected_actors": [
+        "actor_admin"
+      ],
+      "affected_resources": [
+        "resource_team_member"
+      ],
+      "affected_actions": [
+        "Read"
+      ],
+      "status": "PARTIALLY_CONFIRMED",
+      "confidence": 55,
+      "evidence": "Observed only that Organization B Admin's own /team page listed exclusively Organization B's 1 member. This was not an active attempt to directly access Organization A's roster (e.g. no cross-tenant roster ID/endpoint was targeted); it only shows that the Organization B view itself does not leak Organization A data, not that a deliberate cross-tenant roster-read attempt was blocked.",
+      "evidence_source": "rule_admin_read_roster_cross_tenant"
+    },
+    {
+      "id": "inv_invitation_admin_only",
+      "statement": "Only Admin-role users may administer organization invitations; this is enforced at the route/server level, not merely hidden in the UI.",
+      "affected_actors": [
+        "actor_member",
+        "actor_admin"
+      ],
+      "affected_resources": [
+        "resource_invitation"
+      ],
+      "affected_actions": [
+        "Administer"
+      ],
+      "status": "PARTIALLY_CONFIRMED",
+      "confidence": 70,
+      "evidence": "Member denial of direct /invitations access was actively tested and confirmed (server-side admins-only block). Admin's actual ability to complete an invitation (submit, have it persist, and have it accepted) was never tested - the invite modal was only opened, not submitted.",
+      "evidence_source": "rule_member_administer_invitations"
+    }
+  ],
+  "security_hypotheses": [
+    {
+      "id": "hyp_cross_tenant_doc_read",
+      "challenges_rule_id_or_invariant_id": "inv_tenant_isolation_documents",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Read",
+      "condition": "document belongs to a different tenant than the actor",
+      "suspected_execution_path": "/documents/<id> direct GET using an ID known to belong to another organization",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "evidence": "Only one role (Admin) and one direction (Organization B -> Organization A) was tested",
+      "missing_or_uncertain_control": "Possible missing tenant check on the document read path",
+      "confidence": 20,
+      "minimal_validation_method": "Request a cross-tenant document ID as an authenticated user of a different org and observe the response"
+    },
+    {
+      "id": "hyp_cross_tenant_doc_write",
+      "challenges_rule_id_or_invariant_id": "inv_tenant_isolation_documents",
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Update",
+      "condition": "document belongs to a different tenant than the actor",
+      "suspected_execution_path": "/documents/<id>/edit direct access and save submission for a cross-tenant document ID",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "evidence": "Edit form rendered blank rather than an immediate not-found/not-authorized state, suggesting the frontend route guard is weaker than the view route's",
+      "missing_or_uncertain_control": "Frontend route guard on the edit path does not pre-check tenant ownership before rendering a form, though the backend save path does reject the write",
+      "confidence": 30,
+      "minimal_validation_method": "Submit a save on a cross-tenant document edit form and verify both the response and the underlying record afterward"
+    }
+  ],
+  "coverage_review": {
+    "dimensions_reviewed": [
+      "actors",
+      "resources",
+      "actions",
+      "conditions",
+      "tenant_boundaries",
+      "ownership_boundaries",
+      "privileged_operations"
+    ],
+    "coverage_gaps": [
+      {
+        "id": "gap_state_transitions",
+        "description": "No stateful resource/workflow (e.g. document draft/published, invitation pending/accepted/revoked) was identified or tested; state_machines section is empty.",
+        "dimension": "state_transitions"
+      },
+      {
+        "id": "gap_same_org_multi_author",
+        "description": "Organization B (the only Admin-accessible tenant) has just 1 member, so Admin-vs-other-Member-in-same-org document editing was never testable.",
+        "dimension": "privileged_operations"
+      },
+      {
+        "id": "gap_symmetric_tenant_test",
+        "description": "Cross-tenant isolation was tested in only one direction (Organization B actor against Organization A resource); the reverse direction (Organization A actor against Organization B resource) was not tested.",
+        "dimension": "tenant_boundaries"
+      },
+      {
+        "id": "gap_delete_action",
+        "description": "No delete control was found in the UI for documents under either role; it is unresolved whether Delete exists at all in this application.",
+        "dimension": "actions"
+      },
+      {
+        "id": "gap_invite_end_to_end",
+        "description": "The Invite Member flow was observed as reachable but not submitted, so acceptance and resulting role assignment were never validated.",
+        "dimension": "privileged_operations"
+      },
+      {
+        "id": "gap_org_a_admin_account",
+        "description": "No Admin credentials for Organization A were provided; Organization A was only tested from the Member perspective.",
+        "dimension": "actors"
+      }
+    ]
+  },
+  "validation_results": [
+    {
+      "id": "VR0",
+      "hypothesis_id": "n/a",
+      "rule_ids_tested": [
+        "rule_member_update_document_not_own_authorship"
+      ],
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Update",
+      "condition_tested": "same organization, actor is not the document's author, accessed directly via /documents/<id>/edit",
+      "test_performed": "Member account navigated directly to the edit URL of an Admin-authored document in the same org and submitted a save",
+      "evidence": "Server rejected the save with 'You can only edit your own documents'; re-fetching the document afterward confirmed its content was unchanged",
+      "result_status": "REJECTED",
+      "unresolved_edges": [],
+      "notes": "Hypothesis that ownership check could be bypassed via direct URL access was rejected; the control held."
+    },
+    {
+      "id": "VR1",
+      "hypothesis_id": "hyp_cross_tenant_doc_read",
+      "rule_ids_tested": [
+        "rule_admin_read_document_cross_tenant"
+      ],
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Read",
+      "condition_tested": "document belongs to a different organization (Organization A) than the actor's own (Organization B)",
+      "test_performed": "Organization B Admin requested Organization A's 'Org A Financial Report' document by direct ID via /documents/<id>",
+      "evidence": "Response was 'Document not found', identical to the response for a genuinely nonexistent ID tested earlier in Round 1",
+      "result_status": "REJECTED",
+      "unresolved_edges": [
+        "Reverse direction (Organization A actor reading a Organization B document) not tested"
+      ],
+      "notes": "Hypothesis of a cross-tenant read bypass was rejected for this direction; the control held with no information leakage."
+    },
+    {
+      "id": "VR2",
+      "hypothesis_id": "hyp_cross_tenant_doc_write",
+      "rule_ids_tested": [
+        "rule_admin_update_document_cross_tenant"
+      ],
+      "actor": "actor_admin",
+      "resource": "resource_document",
+      "action": "Update",
+      "condition_tested": "document belongs to a different organization (Organization A) than the actor's own (Organization B)",
+      "test_performed": "Organization B Admin navigated to /documents/<org-a-doc-id>/edit, typed text into the body field, and submitted 'Save changes'",
+      "evidence": "Edit form rendered as an empty/blank 'Untitled document' shell (no victim content exposed). After saving, Organization B's document list still showed only its original 3 documents (no phantom document created), and re-fetching the Organization A document showed its original content ('ORG-A-DOC-001') unchanged",
+      "result_status": "REJECTED",
+      "unresolved_edges": [
+        "Reverse direction (Organization A actor writing to a Organization B document) not tested"
+      ],
+      "notes": "Hypothesis of a cross-tenant write bypass was rejected; no data was exposed and no write was persisted. Noted as a UI hygiene gap (blank form instead of an immediate not-found/not-authorized state) but not a confirmed vulnerability."
+    },
+    {
+      "id": "VR3",
+      "hypothesis_id": "n/a",
+      "rule_ids_tested": [
+        "rule_admin_read_roster_cross_tenant"
+      ],
+      "actor": "actor_admin",
+      "resource": "resource_team_member",
+      "action": "Read",
+      "condition_tested": "roster belongs to a different organization (Organization A) than the actor's own (Organization B)",
+      "test_performed": "Organization B Admin opened /team",
+      "evidence": "Organization B Admin opened its own /team page, which listed only Organization B's 1 member. No direct attempt was made to request Organization A's roster by ID or any other means, so this observation does not constitute an active test of cross-tenant roster-read denial.",
+      "result_status": "UNRESOLVED",
+      "unresolved_edges": [
+        "No active cross-tenant roster-read attempt performed in either direction"
+      ],
+      "notes": "Downgraded from REJECTED: opening Organization B's own Team page is not equivalent to actively attempting cross-tenant roster access. The absence of Organization A data in Organization B's own view is consistent with isolation but was not a deliberate validation attempt against the hypothesis."
+    },
+    {
+      "id": "VR4",
+      "hypothesis_id": "n/a",
+      "rule_ids_tested": [
+        "rule_member_administer_invitations"
+      ],
+      "actor": "actor_member",
+      "resource": "resource_invitation",
+      "action": "Administer",
+      "condition_tested": "actor role is Member, not Admin, accessed directly via /invitations",
+      "test_performed": "Member account (member_user) navigated directly to /invitations by URL, bypassing the fact that the Invitations nav item is not shown to Members",
+      "evidence": "Server-rendered block: 'Admins only - Only organization admins can manage invitations'",
+      "result_status": "REJECTED",
+      "unresolved_edges": [],
+      "notes": "Hypothesis that the admin-only route guard was UI-only (client-side route hiding without a server-side check) was rejected."
+    }
+  ],
+  "unresolved_questions": [
+    {
+      "id": "uq_multi_org_membership",
+      "description": "Whether a single user account can belong to more than one organization.",
+      "related_to": [
+        "rel_user_org_membership"
+      ],
+      "why_unresolved": "Both test accounts' org switcher only showed their current org plus Sign out, with no list of other orgs to switch into; this is consistent with either single-org-only membership or simply no second org being granted to these particular accounts."
+    },
+    {
+      "id": "uq_admin_same_org_other_author",
+      "description": "Whether an Admin can update or delete a document authored by a different Member within the SAME organization.",
+      "related_to": [
+        "rule_admin_update_document_same_org_other_author"
+      ],
+      "why_unresolved": "Organization B, the only tenant with Admin access, has just 1 member, so no same-org document authored by someone else existed to test against."
+    },
+    {
+      "id": "uq_delete_action_exists",
+      "description": "Whether a Delete action exists at all for documents, for any role.",
+      "related_to": [
+        "rule_member_delete_document",
+        "rule_admin_delete_document"
+      ],
+      "why_unresolved": "No delete control was found anywhere in the UI across both roles and both tenants during this engagement; could mean the feature is unimplemented or simply not exposed in any explored surface."
+    },
+    {
+      "id": "uq_ownership_check_mechanism",
+      "description": "Whether the 'own documents only' update rule is implemented via a generic platform row-level-security mechanism or custom application logic.",
+      "related_to": [
+        "rule_member_update_document_not_own_authorship"
+      ],
+      "why_unresolved": "The specific error message ('You can only edit your own documents') suggests custom application logic, but this is an inference from black-box behavior, not confirmed from implementation details."
+    },
+    {
+      "id": "uq_invite_end_to_end",
+      "description": "Whether submitting the Invite Member form actually creates a usable invitation, and whether the invited user is granted exactly the selected role upon acceptance.",
+      "related_to": [
+        "rule_admin_invite_member"
+      ],
+      "why_unresolved": "The invite modal was observed as reachable and functional in its form fields, but no invitation was actually submitted, to avoid sending an unauthorized real email/side effect to a third party."
+    },
+    {
+      "id": "uq_org_a_admin_role",
+      "description": "Whether Organization A's Admin account behaves identically to Organization B's Admin account for all rules documented here (e.g. same-org document update, invite capability).",
+      "related_to": [
+        "rule_admin_invite_member",
+        "rule_admin_update_document_same_org_other_author"
+      ],
+      "why_unresolved": "No credentials for an Organization A Admin account were provided or used in this engagement."
+    }
+  ]
+}
