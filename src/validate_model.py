@@ -37,7 +37,8 @@ REQUIRED_TOP_LEVEL = [
 STATUSES = {"OBSERVED", "INFERRED", "CONFIRMED", "PARTIALLY_CONFIRMED", "REJECTED", "UNRESOLVED"}
 EFFECTS = {"allow", "deny", "unknown"}
 ACTION_SEPARATORS = ("/", ",")
-COMBINED_ACTOR_MARKERS = ("_or_",)
+ACTOR_SEPARATORS = ("/", ",", "|", "+")
+COMBINED_ACTOR_MARKERS = ("_or_", "_and_", " or ", " and ")
 COMBINED_ACTOR_IDS = {"any_role"}
 
 
@@ -69,7 +70,13 @@ def check_rules(model):
 
         if not isinstance(action, str) or any(s in action for s in ACTION_SEPARATORS):
             errors.append(f"atomicity: rule '{rid}' has a non-atomic action {action!r}")
-        if not isinstance(actor, str) or actor in COMBINED_ACTOR_IDS or any(m in actor for m in COMBINED_ACTOR_MARKERS):
+        actor_normalized = actor.lower() if isinstance(actor, str) else ""
+        if (
+            not isinstance(actor, str)
+            or actor in COMBINED_ACTOR_IDS
+            or any(s in actor for s in ACTOR_SEPARATORS)
+            or any(m in actor_normalized for m in COMBINED_ACTOR_MARKERS)
+        ):
             errors.append(f"atomicity: rule '{rid}' has a combined actor {actor!r}")
         if status not in STATUSES:
             errors.append(f"values: rule '{rid}' has invalid status {status!r}")
