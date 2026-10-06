@@ -36,6 +36,10 @@ is ever reported as a vulnerability.
 
 - [`agent/`](agent/): the Security Architect agent itself: system prompt and the `security-architecture-analysis` skill (the single source of truth for the methodology).
 - [`src/validate_model.py`](src/validate_model.py): deterministic validator for `security_model.json`.
+- [`src/baseline.py`](src/baseline.py): validates and freezes a model as a comparison baseline.
+- [`src/semantic_diff.py`](src/semantic_diff.py): compares authorization-rule semantics across two validated models and flags authorization weakenings as regression candidates.
+- [`tests/test_semantic_diff.py`](tests/test_semantic_diff.py): unit tests for effect changes, evidence-only changes, condition ordering, and rule additions.
+- [`examples/regression_demo/`](examples/regression_demo/): synthetic baseline → injected regression → expected semantic diff demonstration.
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): pointer to the skill file, kept for existing links.
 - [`schema/security_model.schema.json`](schema/security_model.schema.json)
   — a JSON Schema for the structured `security_model.json` output format:
@@ -62,6 +66,39 @@ python src/validate_model.py examples/security_model.example.json
 used in the reference engagement: required top-level keys, atomic actions, no
 combined actors, valid status/effect values, and `effect: "unknown"` for every
 `UNRESOLVED` authorization rule. It exits non-zero on any issue.
+
+## Comparing versions
+
+Create a validated baseline snapshot:
+
+```bash
+python src/baseline.py examples/regression_demo/baseline.json \\
+  --output /tmp/baseline.json
+```
+
+Compare a later model against it:
+
+```bash
+python src/semantic_diff.py \\
+  examples/regression_demo/baseline.json \\
+  examples/regression_demo/changed.json \\
+  --output /tmp/diff.json
+```
+
+The current MVP matches authorization rules by canonical
+`Actor × Resource × Action × Condition` identity. Condition order, whitespace,
+confidence, status, evidence, and JSON ordering do not create a semantic
+change. A `deny → allow` transition is classified as
+`AUTHORIZATION_WEAKENING` and marked as a regression candidate; matching
+baseline invariants are attached to the result. This first implementation is
+intentionally deterministic: paraphrased or structurally changed conditions
+are reported as rule removal/addition rather than matched with an LLM.
+
+Run the unit tests with:
+
+```bash
+python -m unittest discover -s tests
+```
 
 ## Status vocabulary
 
