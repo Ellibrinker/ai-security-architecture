@@ -1,9 +1,9 @@
 # Security Architect Agent
 
-This folder contains the actual instructions that drove the Security
-Architect agent in the reference engagement (see
-[`../examples/`](../examples/)). They are published close to verbatim. The
-only changes are removing platform-specific tool names and environment
+This folder contains the current instructions used by the Security Architect
+agent, evolved from the reference engagement (see
+[`../examples/`](../examples/)). The public version preserves the agent's
+core behavior while removing platform-specific tool names and environment
 details.
 
 ## Components
