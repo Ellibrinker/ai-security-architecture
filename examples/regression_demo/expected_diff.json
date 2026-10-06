@@ -26,7 +26,7 @@
       "current_status": "OBSERVED",
       "baseline_rule_id": "rule_member_update_document_not_owner",
       "current_rule_id": "rule_member_update_document_not_owner",
-      "violated_invariants": [
+      "related_invariants": [
         {
           "id": "inv_member_update_own_only",
           "statement": "Members may only update documents they own.",

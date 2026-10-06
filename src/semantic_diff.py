@@ -115,7 +115,7 @@ def _change_from_rule(
         "current_status": None,
         "baseline_rule_id": None,
         "current_rule_id": None,
-        "violated_invariants": [],
+        "related_invariants": [],
     }
 
 
@@ -172,7 +172,7 @@ def compare_models(baseline, current):
         change["baseline_rule_id"] = before.get("id")
         change["current_rule_id"] = after.get("id")
         if regression_candidate:
-            change["violated_invariants"] = matching_invariants(baseline, before)
+            change["related_invariants"] = matching_invariants(baseline, before)
         changes.append(change)
 
     return {

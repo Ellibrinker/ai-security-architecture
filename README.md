@@ -38,7 +38,7 @@ is ever reported as a vulnerability.
 - [`src/validate_model.py`](src/validate_model.py): deterministic validator for `security_model.json`.
 - [`src/baseline.py`](src/baseline.py): validates and freezes a model as a comparison baseline.
 - [`src/semantic_diff.py`](src/semantic_diff.py): compares authorization-rule semantics across two validated models and flags authorization weakenings as regression candidates.
-- [`tests/test_semantic_diff.py`](tests/test_semantic_diff.py): unit tests for effect changes, evidence-only changes, condition ordering, and rule additions.
+- [`tests/test_semantic_diff.py`](tests/test_semantic_diff.py): unit tests for effect changes, evidence-only changes, condition ordering and rewording, rule additions/removals, and duplicate rule identities.
 - [`examples/regression_demo/`](examples/regression_demo/): synthetic baseline → injected regression → expected semantic diff demonstration.
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): pointer to the skill file, kept for existing links.
 - [`schema/security_model.schema.json`](schema/security_model.schema.json)
@@ -72,16 +72,16 @@ combined actors, valid status/effect values, and `effect: "unknown"` for every
 Create a validated baseline snapshot:
 
 ```bash
-python src/baseline.py examples/regression_demo/baseline.json \\
+python src/baseline.py examples/regression_demo/baseline.json \
   --output /tmp/baseline.json
 ```
 
 Compare a later model against it:
 
 ```bash
-python src/semantic_diff.py \\
-  examples/regression_demo/baseline.json \\
-  examples/regression_demo/changed.json \\
+python src/semantic_diff.py \
+  examples/regression_demo/baseline.json \
+  examples/regression_demo/changed.json \
   --output /tmp/diff.json
 ```
 

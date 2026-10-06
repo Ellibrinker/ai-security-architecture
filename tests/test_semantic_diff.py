@@ -51,7 +51,7 @@ class SemanticDiffTests(unittest.TestCase):
         self.assertEqual(change["type"], "AUTHORIZATION_WEAKENING")
         self.assertTrue(change["regression_candidate"])
         self.assertEqual(
-            change["violated_invariants"][0]["id"],
+            change["related_invariants"][0]["id"],
             "inv_member_own_only",
         )
 
@@ -102,6 +102,58 @@ class SemanticDiffTests(unittest.TestCase):
         result = compare_models(baseline, current)
         self.assertEqual(result["changes"][0]["type"], "RULE_ADDED")
 
+
+    def test_rule_removal_is_reported_not_regression(self):
+        baseline = model(rule("deny"))
+        current = {
+            "schema_version": "1.1.0",
+            "authorization_rules": [],
+            "security_invariants": [],
+        }
+        result = compare_models(baseline, current)
+        change = result["changes"][0]
+        self.assertEqual(change["type"], "RULE_REMOVED")
+        self.assertFalse(change["regression_candidate"])
+        self.assertEqual(result["summary"]["rules_removed"], 1)
+
+    def test_unknown_to_allow_is_new_evidence_not_regression(self):
+        result = compare_models(
+            model(rule("unknown", status="UNRESOLVED")),
+            model(rule("allow", status="OBSERVED")),
+        )
+        change = result["changes"][0]
+        self.assertEqual(change["type"], "NEWLY_OBSERVED_ALLOW")
+        self.assertFalse(change["regression_candidate"])
+
+    def test_known_to_unknown_is_unresolved_not_regression(self):
+        for before in ("allow", "deny"):
+            with self.subTest(before=before):
+                result = compare_models(
+                    model(rule(before)),
+                    model(rule("unknown", status="UNRESOLVED")),
+                )
+                change = result["changes"][0]
+                self.assertEqual(change["type"], "AUTHORIZATION_BECAME_UNRESOLVED")
+                self.assertFalse(change["regression_candidate"])
+
+    def test_reworded_condition_is_removal_plus_addition(self):
+        before = rule("deny", conditions=["same organization", "not owner"])
+        after = rule("deny", conditions=["same organization", "actor is not the owner"])
+        result = compare_models(model(before), model(after))
+        types = sorted(c["type"] for c in result["changes"])
+        self.assertEqual(types, ["RULE_ADDED", "RULE_REMOVED"])
+        self.assertEqual(result["summary"]["regression_candidates"], 0)
+
+    def test_duplicate_semantic_rule_identity_raises(self):
+        first = rule("deny", conditions=["same organization", "not owner"])
+        second = dict(
+            rule("allow", conditions=["Not  Owner", "same organization"]),
+            id="rule_member_update_other_duplicate",
+        )
+        duplicate = model(first)
+        duplicate["authorization_rules"].append(second)
+        with self.assertRaises(ValueError):
+            compare_models(duplicate, model(first))
 
 if __name__ == "__main__":
     unittest.main()
