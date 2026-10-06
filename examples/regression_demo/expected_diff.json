@@ -1,0 +1,38 @@
+{
+  "baseline_schema_version": "1.1.0",
+  "current_schema_version": "1.1.0",
+  "summary": {
+    "total_changes": 1,
+    "regression_candidates": 1,
+    "authorization_weakenings": 1,
+    "authorization_restrictions": 0,
+    "rules_added": 0,
+    "rules_removed": 0
+  },
+  "changes": [
+    {
+      "type": "AUTHORIZATION_WEAKENING",
+      "regression_candidate": true,
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "same organization",
+        "actor is not the document owner"
+      ],
+      "baseline_effect": "deny",
+      "current_effect": "allow",
+      "baseline_status": "CONFIRMED",
+      "current_status": "OBSERVED",
+      "baseline_rule_id": "rule_member_update_document_not_owner",
+      "current_rule_id": "rule_member_update_document_not_owner",
+      "violated_invariants": [
+        {
+          "id": "inv_member_update_own_only",
+          "statement": "Members may only update documents they own.",
+          "status": "CONFIRMED"
+        }
+      ]
+    }
+  ]
+}
