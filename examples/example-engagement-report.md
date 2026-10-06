@@ -98,7 +98,8 @@ authorization bypass.
 
 Every actively tested authorization hypothesis — ownership-based document
 write control, cross-tenant document read/write isolation, and role-gated
-admin routes — was **rejected** (the suspected gap did not exist): the
+admin routes — was **rejected** (each hypothesis was not supported by the observed result
+for the exact edge tested): the
 backend independently enforces these checks regardless of what the frontend
 UI shows or hides. The only validated finding is the low-severity UI/route
 hygiene gap described above.

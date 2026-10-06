@@ -521,7 +521,7 @@
       "evidence": "Server rejected the save with 'You can only edit your own documents'; re-fetching the document afterward confirmed its content was unchanged",
       "result_status": "REJECTED",
       "unresolved_edges": [],
-      "notes": "Hypothesis that ownership check could be bypassed via direct URL access was rejected; the control held."
+      "notes": "Hypothesis that ownership check could be bypassed via direct URL access was rejected; the tested authorization bypass was not observed, and the tested control held for this exact edge."
     },
     {
       "id": "VR1",
@@ -539,7 +539,7 @@
       "unresolved_edges": [
         "Reverse direction (Organization A actor reading a Organization B document) not tested"
       ],
-      "notes": "Hypothesis of a cross-tenant read bypass was rejected for this direction; the control held with no information leakage."
+      "notes": "Hypothesis of a cross-tenant read bypass was rejected for this direction; the tested authorization bypass was not observed, with no information leakage, and the tested control held for this exact edge."
     },
     {
       "id": "VR2",
