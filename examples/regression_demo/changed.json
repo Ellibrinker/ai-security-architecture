@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.1.0",
+  "app": {
+    "target_url": "https://example-regression-demo.test/",
+    "app_name": "RegressionDemo",
+    "analysis_date": "2026-10-06",
+    "engagement_scope": "Synthetic regression-detection demonstration using a fictional application model.",
+    "notes": "Synthetic changed-version fixture with one injected authorization regression."
+  },
+  "analysis_coverage": {
+    "actors": "PARTIAL",
+    "tenants": "NOT_ANALYZED",
+    "resources": "PARTIAL",
+    "relationships": "PARTIAL",
+    "authorization_rules": "PARTIAL",
+    "state_machines": "NOT_ANALYZED",
+    "security_invariants": "PARTIAL",
+    "validation_results": "NOT_ANALYZED"
+  },
+  "actors": [
+    {
+      "id": "actor_member",
+      "name": "Member",
+      "description": "Authenticated member user",
+      "roles": ["member"],
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Synthetic baseline fixture",
+      "evidence_source": "examples/regression_demo"
+    }
+  ],
+  "tenants": [],
+  "resources": [
+    {
+      "id": "resource_document",
+      "name": "Document",
+      "description": "Member-owned document",
+      "tenant_scoped": true,
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Synthetic baseline fixture",
+      "evidence_source": "examples/regression_demo"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_document_ownership",
+      "type": "ownership",
+      "from": "actor_member",
+      "to": "resource_document",
+      "description": "Each document has an owning member",
+      "status": "OBSERVED",
+      "confidence": 90,
+      "evidence": "Synthetic baseline fixture",
+      "evidence_source": "examples/regression_demo"
+    }
+  ],
+  "authorization_rules": [
+    {
+      "id": "rule_member_update_document_not_owner",
+      "actor": "actor_member",
+      "resource": "resource_document",
+      "action": "Update",
+      "conditions": [
+        "same organization",
+        "actor is not the document owner"
+      ],
+      "effect": "allow",
+      "execution_path_status": "OBSERVED_IN_USE",
+      "status": "CONFIRMED",
+      "confidence": 95,
+      "evidence": "Synthetic baseline: non-owner update is denied",
+      "evidence_source": "examples/regression_demo/baseline.json"
+    }
+  ],
+  "state_machines": [],
+  "security_invariants": [
+    {
+      "id": "inv_member_update_own_only",
+      "statement": "Members may only update documents they own.",
+      "affected_actors": ["actor_member"],
+      "affected_resources": ["resource_document"],
+      "affected_actions": ["Update"],
+      "status": "CONFIRMED",
+      "confidence": 95,
+      "evidence": "Synthetic baseline authorization rule",
+      "evidence_source": "rule_member_update_document_not_owner"
+    }
+  ],
+  "security_hypotheses": [],
+  "coverage_review": {
+    "dimensions_reviewed": [
+      "actors",
+      "resources",
+      "actions",
+      "conditions",
+      "ownership_boundaries"
+    ],
+    "coverage_gaps": []
+  },
+  "validation_results": [],
+  "unresolved_questions": []
+}
