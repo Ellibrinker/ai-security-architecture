@@ -98,8 +98,8 @@ Use consistently across the graph:
 - `PARTIALLY_CONFIRMED` - some but not all important edges of a broader rule
   were validated; the untested edges stay INFERRED or UNRESOLVED. Never
   collapse this to `CONFIRMED` for the whole rule.
-- `REJECTED` - a hypothesis was actively tested and the suspected gap did not
-  exist (the control held).
+- `REJECTED` - a hypothesis was actively tested and was not supported by the
+  observed result.
 - `UNRESOLVED` - genuinely unknown; not yet observed, inferred, or testable
   within current scope.
 
@@ -134,7 +134,7 @@ lower-confidence candidates, not as confirmed architecture.
 Model authorization at the granularity of:
 
 ```
-Actor x Resource x Action x Condition -> allowed / denied
+Actor x Resource x Action x Condition -> allow / deny / unknown
 ```
 
 - `Actor`: a role, a relationship to the resource (owner, member,
@@ -151,9 +151,8 @@ sibling rules on the same resource. Two actions on the same resource (e.g.
 Read vs. Delete) may have different authorization outcomes - do not assume
 they share a rule unless evidence shows the same check governs both (e.g.
 identical error message/behavior observed for both, or a stated/observed
-shared code path). When evidence is genuinely shared, it's fine to record one
-rule covering multiple actions - but state the shared evidence explicitly
-rather than assuming it by convenience.
+shared code path). Even when evidence is shared across actions, emit one
+separate rule per action and point each rule at the same shared evidence.
 
 ## Resource Lifecycle and State Machines
 

@@ -25,6 +25,7 @@
     "analysis_coverage": {
       "type": "object",
       "description": "Per-section coverage status, distinguishing 'not yet analyzed' from 'analyzed, found nothing' (an empty array alone cannot make that distinction).",
+      "required": ["actors", "tenants", "resources", "relationships", "authorization_rules", "state_machines", "security_invariants", "validation_results"],
       "properties": {
         "actors": { "$ref": "#/definitions/coverageStatus" },
         "tenants": { "$ref": "#/definitions/coverageStatus" },
