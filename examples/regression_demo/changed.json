@@ -67,10 +67,10 @@
       ],
       "effect": "allow",
       "execution_path_status": "OBSERVED_IN_USE",
-      "status": "CONFIRMED",
+      "status": "OBSERVED",
       "confidence": 95,
-      "evidence": "Synthetic baseline: non-owner update is denied",
-      "evidence_source": "examples/regression_demo/baseline.json"
+      "evidence": "Synthetic changed version: non-owner update is now allowed",
+      "evidence_source": "examples/regression_demo/changed.json"
     }
   ],
   "state_machines": [],
