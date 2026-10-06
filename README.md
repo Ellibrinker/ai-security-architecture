@@ -1,11 +1,11 @@
-# AI Security Architecture
+# AI Security Architecture Inference & Regression Detection
 
 ## Research question
 
 > Can an AI agent infer an application's authorization model from contextual and runtime evidence and detect semantic authorization regressions across versions?
 
 An AI-agent methodology and machine-readable schema for reconstructing a web
-application's **security architecture** from black-box, authorized
+application's **security architecture** through authorized black-box
 interaction — before generating or validating any security hypothesis.
 
 This is a **methodology project**, not a scanner. The core idea: an AI agent
@@ -15,9 +15,11 @@ observable evidence, and only afterward generate cautious, evidence-scoped
 hypotheses and validate them with minimal, reversible, explicitly authorized
 tests.
 
+The structured model is designed to act as a versioned security baseline, enabling authorization rules and invariants to be compared across application versions and semantic regressions to be identified.
+
 ## Why
 
-Most "AI pentesting" demos jump straight to exploitation. This project
+Many "AI pentesting" approaches focus quickly on vulnerability discovery and exploitation. This project
 argues for the opposite order:
 
 ```
@@ -60,7 +62,7 @@ is ever reported as a vulnerability.
 | `INFERRED` | Reasoned from observations, not directly witnessed. |
 | `CONFIRMED` | A specific, exact edge was actively validated and holds. |
 | `PARTIALLY_CONFIRMED` | Some but not all important edges of a broader rule were validated; untested edges stay `INFERRED`/`UNRESOLVED`. |
-| `REJECTED` | A hypothesis was actively tested and the suspected gap did not exist. |
+| `REJECTED` | A hypothesis was actively tested and was not supported by the observed result. |
 | `UNRESOLVED` | Genuinely unknown; not yet observed, inferred, or testable. |
 
 ## Atomic authorization modeling
