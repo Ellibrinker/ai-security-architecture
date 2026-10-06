@@ -34,13 +34,9 @@ is ever reported as a vulnerability.
 
 ## What's in this repo
 
-- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — the full engagement
-  methodology: the adaptive engagement flow, the atomic
-  Actor × Resource × Action × Condition authorization model, the
-  `DECLARED_ONLY` vs. `OBSERVED_IN_USE` execution-path distinction, resource
-  lifecycle/state-machine modeling, and the seven-phase process
-  (Exploration → Architecture Reconstruction → Invariants → Hypotheses →
-  Coverage Review → Validation → Final Output).
+- [`agent/`](agent/): the Security Architect agent itself: system prompt and the `security-architecture-analysis` skill (the single source of truth for the methodology).
+- [`src/validate_model.py`](src/validate_model.py): deterministic validator for `security_model.json`.
+- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): pointer to the skill file, kept for existing links.
 - [`schema/security_model.schema.json`](schema/security_model.schema.json)
   — a JSON Schema for the structured `security_model.json` output format:
   actors, tenants, resources, relationships, atomic authorization rules,
@@ -53,6 +49,19 @@ is ever reported as a vulnerability.
 - [`examples/example-engagement-report.md`](examples/example-engagement-report.md)
   — a narrative write-up to accompany the example model, showing how
   evidence, hypotheses, and validation results are reported in prose.
+
+## Validating a model
+
+```bash
+pip install -r requirements.txt
+python src/validate_model.py examples/security_model.example.json
+# VALID: examples/security_model.example.json (schema_version 1.1.0, 12 authorization rules)
+```
+
+`src/validate_model.py` runs JSON Schema validation plus the structural checks
+used in the reference engagement: required top-level keys, atomic actions, no
+combined actors, valid status/effect values, and `effect: "unknown"` for every
+`UNRESOLVED` authorization rule. It exits non-zero on any issue.
 
 ## Status vocabulary
 
