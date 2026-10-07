@@ -41,6 +41,7 @@ is ever reported as a vulnerability.
 - [`tests/test_semantic_diff.py`](tests/test_semantic_diff.py): unit tests for effect changes, evidence-only changes, condition ordering and rewording, rule additions/removals, and duplicate rule identities.
 - [`examples/regression_demo/`](examples/regression_demo/): synthetic baseline → injected regression → expected semantic diff demonstration.
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): pointer to the skill file, kept for existing links.
+- [`docs/EXPERIMENT_DESIGN.md`](docs/EXPERIMENT_DESIGN.md): blind evaluation protocol for authorization-model inference and semantic regression detection.
 - [`schema/security_model.schema.json`](schema/security_model.schema.json)
   — a JSON Schema for the structured `security_model.json` output format:
   actors, tenants, resources, relationships, atomic authorization rules,
